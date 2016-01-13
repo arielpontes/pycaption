@@ -189,10 +189,7 @@ class DFXPReader(BaseReader):
         # convert tag attributes
         args = self._translate_style(tag)
         # only include span tag if attributes returned
-        # TODO - this is an obvious very old bug. args will be a dictionary.
-        # but since nobody complained, I'll leave it like that.
-        # Happy investigating!
-        if args != u'':
+        if args:
             node = LegacyNode.create_style(
                 True, args, layout_info=tag.layout_info)
             node.start = True

@@ -198,6 +198,10 @@ class DFXPtoWebVTTTestCase(unittest.TestCase, WebVTTTestingMixIn):
     def test_dfxp_with_inline_style_to_webvtt_conversion(self):
         caption_set = DFXPReader().read(SAMPLE_DFXP_WITH_INLINE_STYLE)
         results = WebVTTWriter().write(caption_set)
+        caps = caption_set.get_captions('en-US')
+        cap = caps[0]
+        snode = cap.nodes[1]
+        # import ipdb; ipdb.set_trace()
         self.assertTrue(isinstance(results, unicode))
         self.assertWebVTTEquals(SAMPLE_WEBVTT_FROM_DFXP_WITH_STYLE, results)
 

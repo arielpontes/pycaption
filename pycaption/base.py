@@ -1,4 +1,5 @@
 from datetime import timedelta
+from enum import Enum
 from numbers import Number
 
 from .exceptions import CaptionReadError, CaptionReadTimingError
@@ -88,9 +89,15 @@ class BaseWriter(object):
         return content
 
 
-class Style(object):
-    def __init__(self):
-        pass
+class Style(Enum):
+    """
+    An Enum class for keeping the supported styles well documented and easily
+    findable. Legacy styles, which were treated as arbitrary key/value pairs,
+    will be deprecated.
+    """
+    bold = 1
+    italic = 2
+    underline = 3
 
 
 class LegacyNode(object):
@@ -120,6 +127,7 @@ class LegacyNode(object):
         self.content = None
 
         # Boolean. Marks the beginning/ end of a Style node.
+        # True for opening style nodes and False for closing.
         self.start = None
         self.layout_info = layout_info
 
@@ -131,7 +139,10 @@ class LegacyNode(object):
         elif t == LegacyNode.BREAK:
             return repr(u'BREAK')
         elif t == LegacyNode.STYLE:
-            return repr(u'STYLE: %s %s' % (self.start, self.content))
+            if self.start:
+                return repr(u'<STYLE: {}>'.format(self.content.keys()))
+            else:
+                return repr(u'</STYLE: {}>'.format(self.content.keys()))
         else:
             raise RuntimeError(u'Unknown node type: ' + unicode(t))
 
@@ -151,6 +162,45 @@ class LegacyNode(object):
     @staticmethod
     def create_break(layout_info=None):
         return LegacyNode(LegacyNode.BREAK, layout_info=layout_info)
+
+    def is_text(self):
+        return self.type_ == self.TEXT
+
+    def is_style(self):
+        return self.type_ == self.STYLE
+
+    def is_break(self):
+        return self.type_ == self.BREAK
+
+
+class CaptionNode(object):
+    """
+    This is a new implementation of the old LegacyNode.
+    LegacyNodes represent elements in a flat list with opening and closing
+    nodes that must be parsed procedurally by a state machine. CaptionNode, on
+    the other hand, represents elements of a tree structure instead.
+    """
+    def __init__(self, layout_info, styles=[]):
+        """
+        :param Layout layout_info: Layout information to be applied to all
+            descendants unless explicitly overwritten.
+        :param list styles: A list of styles to be applied to this node
+        """
+        self.layout_info = layout_info
+        self.styles = styles
+        self.children = []
+
+    def append_child(self, child):
+        """
+        :param child: Unicode or CaptionNode object.
+        """
+        if self.children and isinstance(self.children[-1], unicode):
+            self.children[-1] += child
+        else:
+            self.children.append(child)
+
+    def __repr__(self):
+        return u"<CaptionNode ...>"
 
 
 class Caption(object):
@@ -204,6 +254,55 @@ class Caption(object):
         for some of the supported output formats (ex. SRT, DFXP).
         """
         return self._format_timestamp(self.end, msec_separator)
+
+    def generate_tree(self):
+        """
+        Generate new CaptionNodes based on LegacyNodes (to be deprecated).
+        """
+        current_layout = self.layout_info
+        current_style = []
+        current_node = CaptionNode(current_layout)
+        self.root_node = current_node
+        for node in self.nodes:
+            if node.is_break():
+                # In the new pycaption Breaks should be treated as text
+                node = LegacyNode.create_text(u'\n', node.layout_info)
+            if node.is_text():
+                same_layout = node.layout_info == current_layout
+                same_style = node.style == current_style
+                if same_layout and same_style:
+                    current_node.append_child(node.content)
+                else:
+                    current_layout = node.layout_info
+                    current_style = node.style
+                    new_node = CaptionNode(
+                        layout_info=current_layout,
+                        style=current_style
+                    )
+                    current_node.append_child(new_node)
+                    current_node = new_node
+            if node.is_style():
+                new_style = [elem for elem in current_style]
+                for style, val in node.content.items():
+                    if val:
+                        if style not in new_style and style == 'bold':
+                            new_style.append(Style.bold)
+                        if style not in new_style and style == 'italic':
+                            new_style.append(Style.italic)
+                        if style not in new_style and style == 'underline':
+                            new_style.append(Style.underline)
+                    else:
+                        if style in new_style and style == 'bold':
+                            new_style.remove(Style.bold)
+                        if style in new_style and style == 'italic':
+                            new_style.remove(Style.italic)
+                        if style in new_style and style == 'underline':
+                            new_style.remove(Style.underline)
+                if new_style != current_style:
+                    current_style = new_style
+                    # TODO properly style nodes
+
+
 
     def __repr__(self):
         return repr(
@@ -356,6 +455,13 @@ class CaptionSet(object):
                     out_captions.append(caption)
             self.set_captions(lang, out_captions)
 
+    def generate_tree(self):
+        for lang in self.get_languages():
+            captions = self.get_captions(lang)
+            for caption in captions:
+                caption.generate_tree()
+
+
 # Functions
 def merge_concurrent_captions(caption_set):
     """Merge captions that have the same start and end times"""
@@ -382,6 +488,7 @@ def merge_concurrent_captions(caption_set):
         if merged_captions:
             caption_set.set_captions(lang, merged_captions)
     return caption_set
+
 
 def merge(captions):
     """

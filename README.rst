@@ -16,6 +16,13 @@ Changelog
 
 0.5.x
 ^^^^^
+- Added more style support on DFXP to WebVTT/SAMI conversions
+- Fix #59
+- Fix #61
+- Fix #123
+
+0.5.0
+^^^^^
 - Added positioning support
 - Created documentation
 
