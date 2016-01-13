@@ -1,4 +1,4 @@
-from ..base import CaptionList, Caption, CaptionNode
+from ..base import CaptionList, Caption, LegacyNode
 from ..geometry import (UnitEnum, Size, Layout, Point, Alignment,
                         VerticalAlignmentEnum, HorizontalAlignmentEnum)
 
@@ -187,7 +187,7 @@ class CaptionCreator(object):
 
         This method relies on the InstructionNodeCreator's ability to generate
         InstructionNodes properly, so at this point we can convert
-        _InstructionNodes nodes almost 1:1 to CaptionNodes
+        _InstructionNodes nodes almost 1:1 to LegacyNodes
 
         :type node_buffer: InstructionNodeCreator
 
@@ -215,14 +215,14 @@ class CaptionCreator(object):
 
             # handle line breaks
             elif instruction.is_explicit_break():
-                caption.nodes.append(CaptionNode.create_break(
+                caption.nodes.append(LegacyNode.create_break(
                     layout_info=_get_layout_from_tuple(instruction.position)
                 ))
 
             # handle open italics
             elif instruction.sets_italics_on():
                 caption.nodes.append(
-                    CaptionNode.create_style(
+                    LegacyNode.create_style(
                         True, {u'italics': True},
                         layout_info=_get_layout_from_tuple(
                             instruction.position
@@ -232,7 +232,7 @@ class CaptionCreator(object):
             # handle clone italics
             elif instruction.sets_italics_off():
                 caption.nodes.append(
-                    CaptionNode.create_style(
+                    LegacyNode.create_style(
                         False, {u'italics': True},
                         layout_info=_get_layout_from_tuple(
                             instruction.position)
@@ -242,7 +242,7 @@ class CaptionCreator(object):
             elif instruction.is_text_node():
                 layout_info = _get_layout_from_tuple(instruction.position)
                 caption.nodes.append(
-                    CaptionNode.create_text(
+                    LegacyNode.create_text(
                         instruction.get_text(), layout_info=layout_info),
                 )
                 caption.layout_info = layout_info
@@ -429,7 +429,7 @@ class _InstructionNode(object):
     commands (such as explicit line breaks or turning italics on/off).
 
     These nodes will be aggregated into a RepresentableNode, which will then
-    be easily converted to a CaptionNode.
+    be easily converted to a LegacyNode.
     """
     TEXT = 0
     BREAK = 1
@@ -586,7 +586,7 @@ def _format_italics(collection):
 
     This is useful because the raw commands read from the SCC can't be used
     the way they are by the writers for the other formats. Those other writers
-    require the list of CaptionNodes to be formatted in a certain way.
+    require the list of LegacyNodes to be formatted in a certain way.
 
     Note: Using state machines to manage the italics didn't work well because
     we're using state machines already to track the position, and their

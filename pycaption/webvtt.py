@@ -3,7 +3,7 @@ import re
 from copy import deepcopy
 
 from .base import (
-    BaseReader, BaseWriter, CaptionSet, CaptionList, Caption, CaptionNode
+    BaseReader, BaseWriter, CaptionSet, CaptionList, Caption, LegacyNode
 )
 
 from .geometry import Layout
@@ -100,8 +100,8 @@ class WebVTTReader(BaseReader):
             else:
                 if found_timing:
                     if nodes:
-                        nodes.append(CaptionNode.create_break())
-                    nodes.append(CaptionNode.create_text(
+                        nodes.append(LegacyNode.create_break())
+                    nodes.append(LegacyNode.create_text(
                         self._decode(line)))
                 else:
                     # it's a comment or some metadata; ignore it
@@ -403,7 +403,7 @@ class WebVTTWriter(BaseWriter):
         # escaped before being appended to this string)
         s = u''
         for i, node in enumerate(nodes):
-            if node.type_ == CaptionNode.TEXT:
+            if node.type_ == LegacyNode.TEXT:
                 if s and current_layout and node.layout_info != current_layout:
                     # If the positioning changes from one text node to
                     # another, a new WebVTT cue has to be created.
@@ -413,7 +413,7 @@ class WebVTTWriter(BaseWriter):
                 # finally encoded as WebVTT.
                 s += self._encode(node.content) or u'&nbsp;'
                 current_layout = node.layout_info
-            elif node.type_ == CaptionNode.STYLE:
+            elif node.type_ == LegacyNode.STYLE:
                 resulting_style = self._calculate_resulting_style(node.content, caption_set)
 
                 styles = [u'italics', u'underline', u'bold']
@@ -430,8 +430,8 @@ class WebVTTWriter(BaseWriter):
 
                 # TODO: Refactor pycaption and eliminate the concept of a
                 # "Style node"
-            elif node.type_ == CaptionNode.BREAK:
-                if i > 0 and nodes[i - 1].type_ != CaptionNode.TEXT:
+            elif node.type_ == LegacyNode.BREAK:
+                if i > 0 and nodes[i - 1].type_ != LegacyNode.TEXT:
                     s += u'&nbsp;'
                 if i == 0:  # cue text starts with a break
                     s += u'&nbsp;'

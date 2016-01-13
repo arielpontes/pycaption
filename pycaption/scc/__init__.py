@@ -84,7 +84,7 @@ import string
 import textwrap
 
 from pycaption.base import (
-    BaseReader, BaseWriter, CaptionSet, CaptionNode,
+    BaseReader, BaseWriter, CaptionSet, LegacyNode,
 )
 from pycaption.exceptions import CaptionReadNoCaptions, InvalidInputError
 from .constants import (
@@ -531,9 +531,9 @@ class SCCWriter(BaseWriter):
     @staticmethod
     def _layout_line(caption):
         def caption_node_to_text(caption_node):
-            if caption_node.type_ == CaptionNode.TEXT:
+            if caption_node.type_ == LegacyNode.TEXT:
                 return unicode(caption_node.content)
-            elif caption_node.type_ == CaptionNode.BREAK:
+            elif caption_node.type_ == LegacyNode.BREAK:
                 return u'\n'
         caption_text = u''.join(
             [caption_node_to_text(node) for node in caption.nodes])

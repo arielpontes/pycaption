@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 from .base import (
-    BaseReader, BaseWriter, CaptionSet, CaptionList, Caption, CaptionNode)
+    BaseReader, BaseWriter, CaptionSet, CaptionList, Caption, LegacyNode)
 from .exceptions import CaptionReadNoCaptions, InvalidInputError
 
 
@@ -36,8 +36,8 @@ class SRTReader(BaseReader):
             for line in lines[start_line + 2:end_line - 1]:
                 # skip extra blank lines
                 if not nodes or line != u'':
-                    nodes.append(CaptionNode.create_text(line))
-                    nodes.append(CaptionNode.create_break())
+                    nodes.append(LegacyNode.create_text(line))
+                    nodes.append(LegacyNode.create_break())
 
             if len(nodes):
                 # remove last line break from end of caption list
@@ -123,9 +123,9 @@ class SRTWriter(BaseWriter):
         return srt[:-1]  # remove unwanted newline at end of file
 
     def _recreate_line(self, srt, line):
-        if line.type_ == CaptionNode.TEXT:
+        if line.type_ == LegacyNode.TEXT:
             return srt + u'%s ' % line.content
-        elif line.type_ == CaptionNode.BREAK:
+        elif line.type_ == LegacyNode.BREAK:
             return srt + u'\n'
         else:
             return srt

@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup, NavigableString
 from xml.sax.saxutils import escape
 
 from ..base import (
-    BaseReader, BaseWriter, CaptionSet, CaptionList, Caption, CaptionNode,
+    BaseReader, BaseWriter, CaptionSet, CaptionList, Caption, LegacyNode,
     DEFAULT_LANGUAGE_CODE)
 from ..exceptions import (
     CaptionReadNoCaptions, CaptionReadSyntaxError, InvalidInputError)
@@ -169,13 +169,13 @@ class DFXPReader(BaseReader):
                 # unicode string with xml entities already converted to unicode
                 # characters.
                 tag_text = result.groups()[0]
-                node = CaptionNode.create_text(
+                node = LegacyNode.create_text(
                     tag_text, layout_info=tag.layout_info)
                 self.nodes.append(node)
         # convert line breaks
         elif tag.name == u'br':
             self.nodes.append(
-                CaptionNode.create_break(layout_info=tag.layout_info))
+                LegacyNode.create_break(layout_info=tag.layout_info))
         # convert italics
         elif tag.name == u'span':
             # convert span
@@ -193,7 +193,7 @@ class DFXPReader(BaseReader):
         # but since nobody complained, I'll leave it like that.
         # Happy investigating!
         if args != u'':
-            node = CaptionNode.create_style(
+            node = LegacyNode.create_style(
                 True, args, layout_info=tag.layout_info)
             node.start = True
             node.content = args
@@ -202,7 +202,7 @@ class DFXPReader(BaseReader):
             # recursively call function for any children elements
             for a in tag.contents:
                 self._translate_tag(a)
-            node = CaptionNode.create_style(
+            node = LegacyNode.create_style(
                 False, args, layout_info=tag.layout_info)
             node.start = False
             node.content = args
@@ -335,7 +335,7 @@ class DFXPWriter(BaseWriter):
         :type caption_set: CaptionSet
         :param caption_set: The CaptionSet parent
         :type caption: Caption
-        :type caption_node: CaptionNode
+        :type caption_node: LegacyNode
         """
         assigned_id, attribs = self.region_creator.get_positioning_info(
             lang, caption_set, caption, caption_node)
@@ -380,13 +380,13 @@ class DFXPWriter(BaseWriter):
         line = u''
 
         for node in caption.nodes:
-            if node.type_ == CaptionNode.TEXT:
+            if node.type_ == LegacyNode.TEXT:
                 line += self._encode(node.content)
 
-            elif node.type_ == CaptionNode.BREAK:
+            elif node.type_ == LegacyNode.BREAK:
                 line = line.rstrip() + u'<br/>\n    '
 
-            elif node.type_ == CaptionNode.STYLE:
+            elif node.type_ == LegacyNode.STYLE:
                 line = self._recreate_span(
                     line, node, dfxp, caption_set, caption, lang)
 
@@ -395,7 +395,7 @@ class DFXPWriter(BaseWriter):
     def _recreate_span(self, line, node, dfxp, caption_set=None, caption=None,
                        lang=None):
         # TODO - This method seriously has to go away!
-        # Because of the CaptionNode.STYLE nodes, tree-like structures are
+        # Because of the LegacyNode.STYLE nodes, tree-like structures are
         # are really hard to build, and proper xml elements can't be added.
         # We are left with creating tags manually, which is hard to understand
         # and harder to maintain
@@ -915,7 +915,7 @@ class RegionCreator(object):
 
     # todo - needs to remember the IDs created, and later, when assigning a
     region to every dfxp element, needs to know what region to assign to that
-    element, based on the CaptionNode, its Caption and its CaptionSet.
+    element, based on the LegacyNode, its Caption and its CaptionSet.
 
     The layout information for a node is determined like this:
         - If a node has a (NON-NULL*).layout_info attribute, return the region
@@ -1054,7 +1054,7 @@ class RegionCreator(object):
         :param lang: the language of the current caption element
         :type caption_set: CaptionSet
         :type caption: Caption
-        :type caption_node: CaptionNode
+        :type caption_node: LegacyNode
         :rtype: tuple
         :return: (unicode, dict)
         """

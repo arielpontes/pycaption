@@ -48,7 +48,7 @@ from cssutils import parseString, log, css as cssutils_css
 from bs4 import BeautifulSoup, NavigableString
 
 from .base import (
-    BaseReader, BaseWriter, CaptionSet, CaptionList, Caption, CaptionNode,
+    BaseReader, BaseWriter, CaptionSet, CaptionList, Caption, LegacyNode,
     DEFAULT_LANGUAGE_CODE)
 from .exceptions import (
     CaptionReadNoCaptions, CaptionReadSyntaxError, InvalidInputError)
@@ -253,21 +253,21 @@ class SAMIReader(BaseReader):
             if not result:
                 return
             tag_text = result.groups()[0]
-            self.line.append(CaptionNode.create_text(tag_text, inherit_from))
+            self.line.append(LegacyNode.create_text(tag_text, inherit_from))
         # convert line breaks
         elif tag.name == u'br':
-            self.line.append(CaptionNode.create_break(inherit_from))
+            self.line.append(LegacyNode.create_break(inherit_from))
         # convert italics, bold, and underline
         elif tag.name == u'i' or tag.name == u'b' or tag.name == u'u':
             style_name = self._get_style_name_from_tag(tag.name)
             self.line.append(
-                CaptionNode.create_style(True, {style_name: True})
+                LegacyNode.create_style(True, {style_name: True})
             )
             # recursively call function for any children elements
             for a in tag.contents:
                 self._translate_tag(a, inherit_from)
             self.line.append(
-                CaptionNode.create_style(False, {style_name: True}))
+                LegacyNode.create_style(False, {style_name: True}))
         elif tag.name == u'span':
             self._translate_span(tag, inherit_from)
         else:
@@ -283,14 +283,14 @@ class SAMIReader(BaseReader):
             layout_info = self._build_layout(args, inherit_from)
             # OLD: Create legacy style node
             # NEW: But pass new layout object
-            node = CaptionNode.create_style(True, args, layout_info)
+            node = LegacyNode.create_style(True, args, layout_info)
             self.line.append(node)
             # recursively call function for any children elements
             for a in tag.contents:
                 # NEW: Pass the layout along so that it's eventually attached
                 # to leaf nodes (e.g. text or break)
                 self._translate_tag(a, layout_info)
-            node = CaptionNode.create_style(False, args, layout_info)
+            node = LegacyNode.create_style(False, args, layout_info)
             self.line.append(node)
         else:
             for a in tag.contents:
@@ -563,11 +563,11 @@ class SAMIWriter(BaseWriter):
         line = u''
 
         for node in caption:
-            if node.type_ == CaptionNode.TEXT:
+            if node.type_ == LegacyNode.TEXT:
                 line += self._encode(node.content) + u' '
-            elif node.type_ == CaptionNode.BREAK:
+            elif node.type_ == LegacyNode.BREAK:
                 line = line.rstrip() + u'<br/>\n    '
-            elif node.type_ == CaptionNode.STYLE:
+            elif node.type_ == LegacyNode.STYLE:
                 line = self._recreate_line_style(line, node)
 
         return line.rstrip()

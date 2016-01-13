@@ -93,7 +93,7 @@ class Style(object):
         pass
 
 
-class CaptionNode(object):
+class LegacyNode(object):
     """
     A single node within a caption, representing either
     text, a style, or a linebreak.
@@ -126,31 +126,31 @@ class CaptionNode(object):
     def __repr__(self):
         t = self.type_
 
-        if t == CaptionNode.TEXT:
+        if t == LegacyNode.TEXT:
             return repr(self.content)
-        elif t == CaptionNode.BREAK:
+        elif t == LegacyNode.BREAK:
             return repr(u'BREAK')
-        elif t == CaptionNode.STYLE:
+        elif t == LegacyNode.STYLE:
             return repr(u'STYLE: %s %s' % (self.start, self.content))
         else:
             raise RuntimeError(u'Unknown node type: ' + unicode(t))
 
     @staticmethod
     def create_text(text, layout_info=None):
-        data = CaptionNode(CaptionNode.TEXT, layout_info=layout_info)
+        data = LegacyNode(LegacyNode.TEXT, layout_info=layout_info)
         data.content = text
         return data
 
     @staticmethod
     def create_style(start, content, layout_info=None):
-        data = CaptionNode(CaptionNode.STYLE, layout_info=layout_info)
+        data = LegacyNode(LegacyNode.STYLE, layout_info=layout_info)
         data.content = content
         data.start = start
         return data
 
     @staticmethod
     def create_break(layout_info=None):
-        return CaptionNode(CaptionNode.BREAK, layout_info=layout_info)
+        return LegacyNode(LegacyNode.BREAK, layout_info=layout_info)
 
 
 class Caption(object):
@@ -165,7 +165,7 @@ class Caption(object):
         :type start: Number
         :param end: The end time in microseconds
         :type end: Number
-        :param nodes: A list of CaptionNodes
+        :param nodes: A list of LegacyNodes
         :type nodes: list
         :param style: A dictionary with CSS-like styling rules
         :type style: dict
@@ -219,9 +219,9 @@ class Caption(object):
         Get the text of the caption.
         """
         def get_text_for_node(node):
-            if node.type_ == CaptionNode.TEXT:
+            if node.type_ == LegacyNode.TEXT:
                 return node.content
-            if node.type_ == CaptionNode.BREAK:
+            if node.type_ == LegacyNode.BREAK:
                 return u'\n'
             return u''
         text_nodes = [get_text_for_node(node) for node in self.nodes]
@@ -391,7 +391,7 @@ def merge(captions):
     new_nodes = []
     for caption in captions:
         if new_nodes:
-            new_nodes.append(CaptionNode.create_break())
+            new_nodes.append(LegacyNode.create_break())
         for node in caption.nodes:
             new_nodes.append(node)
     caption = Caption(

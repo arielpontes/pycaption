@@ -4,7 +4,7 @@ try:
     import nltk.data
 except ImportError:
     raise ImportError(u'You must install nltk==2.0.4 and numpy==1.7.1 to be able to use this.')
-from pycaption.base import BaseWriter, CaptionNode
+from pycaption.base import BaseWriter, LegacyNode
 
 
 class TranscriptWriter(BaseWriter):
@@ -28,6 +28,6 @@ class TranscriptWriter(BaseWriter):
 
     def _strip_text(self, elements, lang_transcript):
         for el in elements:
-            if el.type_ == CaptionNode.TEXT:
+            if el.type_ == LegacyNode.TEXT:
                 lang_transcript += el.content
         return lang_transcript

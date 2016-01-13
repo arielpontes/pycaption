@@ -88,7 +88,7 @@ class SCCReaderTestCase(unittest.TestCase):
             Style nodes should be deprecated in favor of another model, so this
             function is expected to go away.
 
-            :type node: pycaption.CaptionNode
+            :type node: pycaption.LegacyNode
             :rtype: bool
             """
             if not node.type_ == node.STYLE:

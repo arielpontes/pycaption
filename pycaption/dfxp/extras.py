@@ -4,7 +4,7 @@
 from copy import deepcopy
 
 from .base import DFXPWriter, DFXP_DEFAULT_REGION
-from ..base import BaseWriter, CaptionNode, merge_concurrent_captions
+from ..base import BaseWriter, LegacyNode, merge_concurrent_captions
 
 from xml.sax.saxutils import escape
 from bs4 import BeautifulSoup
@@ -191,13 +191,13 @@ class LegacyDFXPWriter(BaseWriter):
         line = u''
 
         for node in caption.nodes:
-            if node.type_ == CaptionNode.TEXT:
+            if node.type_ == LegacyNode.TEXT:
                 line += escape(node.content) + u' '
 
-            elif node.type_ == CaptionNode.BREAK:
+            elif node.type_ == LegacyNode.BREAK:
                 line = line.rstrip() + u'<br/>\n    '
 
-            elif node.type_ == CaptionNode.STYLE:
+            elif node.type_ == LegacyNode.STYLE:
                 line = self._recreate_span(line, node, dfxp)
 
         return line.rstrip()
